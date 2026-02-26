@@ -186,12 +186,13 @@ async function notionRequest(
   token: string,
   method: string,
   endpoint: string,
-  body?: any
+  body?: any,
+  apiVersion?: string
 ): Promise<any> {
   const url = `${NOTION_API_BASE}${endpoint}`
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
-    'Notion-Version': NOTION_VERSION,
+    'Notion-Version': apiVersion ?? NOTION_VERSION,
     'Content-Type': 'application/json',
   }
 
@@ -277,11 +278,12 @@ async function getDatabaseRows(token: string, databaseId: string): Promise<Notio
     if (startCursor) body.start_cursor = startCursor
 
     // Try data_sources endpoint first (new API), fallback to databases (legacy)
+    // Note: databases/{id}/query requires 2022-06-28 version (deprecated in 2025-09-03)
     let data: any
     try {
       data = await notionRequest(token, 'POST', `/v1/data_sources/${databaseId}/query`, body)
     } catch {
-      data = await notionRequest(token, 'POST', `/v1/databases/${databaseId}/query`, body)
+      data = await notionRequest(token, 'POST', `/v1/databases/${databaseId}/query`, body, '2022-06-28')
     }
     results.push(...(data.results ?? []))
     hasMore = data.has_more === true

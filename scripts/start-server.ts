@@ -520,11 +520,14 @@ Use the id with:
         'Content-Type': 'application/json',
       }
 
-      // Helper: fetch from Notion API
-      async function notionFetch(method: string, endpoint: string, body?: any): Promise<any> {
+      // Helper: fetch from Notion API (apiVersion override for db query compatibility)
+      async function notionFetch(method: string, endpoint: string, body?: any, apiVersion?: string): Promise<any> {
+        const headers = apiVersion
+          ? { ...apiHeaders, 'Notion-Version': apiVersion }
+          : apiHeaders
         const resp = await fetch(`${NOTION_API}${endpoint}`, {
           method,
-          headers: apiHeaders,
+          headers,
           body: body ? JSON.stringify(body) : undefined,
         })
         if (!resp.ok) {
@@ -620,7 +623,7 @@ Use the id with:
         // If this is a database root, also list its rows
         if (dbQueryId && blockId === dbQueryId) {
           try {
-            const queryData = await notionFetch('POST', `/v1/databases/${blockId}/query`, { page_size: 100 })
+            const queryData = await notionFetch('POST', `/v1/databases/${blockId}/query`, { page_size: 100 }, '2022-06-28')
             for (const row of (queryData.results ?? [])) {
               items.push({
                 ...row,
